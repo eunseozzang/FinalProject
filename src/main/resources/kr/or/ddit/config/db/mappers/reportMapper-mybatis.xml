@@ -3,36 +3,36 @@
 <mapper namespace="kr.or.ddit.report.dao.ReportMapperDao">
 	
 <select id="getRepostList" parameterType="kr.or.ddit.report.vo.ReportVO" resultType="kr.or.ddit.report.vo.ReportVO">
-SELECT a. *
-   FROM(
-		SELECT
-			rownum as rn,
-		    A.report_id,
-		    A.emp_id,
-		    B.emp_nm as emp_nm,
-		    A.type_id,
-		    A.report_dt,
-		    A.report_st,
-		    A.title,
-		    A.content,
-		    A.approver,
-		    D.emp_nm as approver_nm,
-		    A.appr_kind,
-		    C.dept_name
-		FROM
-	    	report A, emp B, dept C, emp D 
-	    <where>
-	    	<if test="empId != null and reportSt != null">
-	    		and A.emp_id = #{empId} 
-	    		and report_st = #{reportSt}
-	    		and A.emp_id = B.emp_id
-	    		and B.dept_id = C.dept_id
-	    		and A.approver = D.emp_id
-	    	</if>
-	    </where>
-	    ORDER BY
-	    	A.report_dt desc
-	    )a
+select rep.*
+from(SELECT a.*, rownum as rn
+	   FROM(
+			SELECT
+			    A.report_id,
+			    A.emp_id,
+			    B.emp_nm as emp_nm,
+			    A.type_id,
+			    A.report_dt,
+			    A.report_st,
+			    A.title,
+			    A.content,
+			    A.approver,
+			    D.emp_nm as approver_nm,
+			    A.appr_kind,
+			    C.dept_name
+			FROM
+		    	report A, emp B, dept C, emp D 
+		    <where>
+		    	<if test="empId != null and reportSt != null">
+		    		and A.emp_id = #{empId} 
+		    		and report_st = #{reportSt}
+		    		and A.emp_id = B.emp_id
+		    		and B.dept_id = C.dept_id
+		    		and A.approver = D.emp_id
+		    	</if>
+		    </where>
+		    ORDER BY
+		    	A.report_dt desc
+		    )a)rep
 WHERE rn between (#{pageIndex}-1) * #{recordCountPerPage} + 1 and #{pageIndex} * #{recordCountPerPage}
 </select>
 	
@@ -441,9 +441,9 @@ WHERE
     
 </select>
 <select id="selectReportList" parameterType="kr.or.ddit.report.vo.ReportVO" resultType="kr.or.ddit.report.vo.ReportVO">
-SELECT F.*
-   from (select
-            rownum as rn,
+SELECT rep.*
+	from(select F.*, rownum as rn
+   		  from (select
 		    A.report_id,
 		    A.emp_id,
 		    A.type_id,
@@ -500,14 +500,14 @@ SELECT F.*
 			</if>
 		</where>
 		  order by 
-		  		A.report_dt desc
 			  <if test="empId != null and empId != ''">
-				,G.check_yn asc
+				G.check_yn asc,
 			  </if>
-			  )F
+		  		A.report_dt desc
+			  )F)rep
 		  		
 <where>
-		and F.rn between #{firstIndex} and #{lastIndex}
+		and rn between #{firstIndex} and #{lastIndex}
 </where> 
 	  		
 <!-- where rownum between (#{pageIndex}-1) * #{recordCountPerPage} + 1 and #{pageIndex} * #{recordCountPerPage} -->
@@ -529,8 +529,7 @@ INSERT INTO approval (
     check_yn,
     approv_step,
     approv_result,
-    approv_text,
-    origin_approver
+    approv_text
 ) SELECT 
 	'APRV-'|| LPAD(approval_seq.nextval, 10, '0'),
     #{reportId},
@@ -539,8 +538,7 @@ INSERT INTO approval (
     'N',
     (select count(*) + 1 as cnt from approval where report_id = #{reportId}),
 	#{approvResult},
-	#{approvText},
-	#{originApprover}
+	#{approvText}
 		    
     FROM DUAL
 </insert>
